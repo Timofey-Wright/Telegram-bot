@@ -1,0 +1,54 @@
+#Импортирование_необходимых_библиотек
+from telebot import *
+from telebot import types as pg
+
+#Подключение_к_нашему_боту
+bot = TeleBot(open("token.txt").read()) #Создайте в папке с ботом txt файл и поместите в него токен вашего бота
+
+#Блок_установленных_команд
+commands = [pg.BotCommand("reviews", "обзоры"),
+            pg.BotCommand("documentation", "документация")]
+bot.set_my_commands(commands)
+
+#Хранение_информации_о_названии_фильма_и_соответсующих_ему_мнение_и_постер
+movies = {"🦸‍♂️Супермен": ["Супермен.jpg"], "🦸‍♀️Супергерл": ["Супергерл.txt"], "Человек-паук": ["Человек-паук.txt"]}
+#По моей задумке на первом месте листа соответсвующего ключа стоит постер фильма, а потом мнение
+
+#Handler_команды_reviews
+@bot.message_handler(commands = ["reviews"])
+def handle_reviews(message):
+    markup = pg.InlineKeyboardMarkup(row_width=3)
+    buttons = []
+    for movie_name in movies.keys():
+        btn = types.InlineKeyboardButton(movie_name, callback_data= f"{movie_name}")
+        buttons.append(btn)
+    for i in range(0, len(buttons), 2):
+        if i + 1 < len(buttons):
+            markup.add(buttons[i], buttons[i + 1])
+        else:
+            markup.add(buttons[i])
+    bot.send_message(message.chat.id, "✨Выберите обзор фильма✨", reply_markup=markup)
+
+#Handler_команды_documentations
+@bot.message_handler(commands = ["documentation"])
+def handle_documentation(message):
+    info = open("documentation.txt", "r", encoding="utf-8")
+    content = info.read()
+    bot.send_message(message.chat.id, content)
+    info.close()
+
+#Handler_callback_запросов
+@bot.callback_query_handler(func=lambda call: True)
+def callback_review(call):
+    opinion = open(f"{movies[call.data][0]}", "rb")
+    bot.send_photo(call.message.chat.id, opinion)
+
+
+
+
+
+
+
+
+#Бесконечный_цикл_работы_бота
+bot.infinity_polling()
